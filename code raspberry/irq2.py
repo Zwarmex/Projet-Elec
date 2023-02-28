@@ -34,7 +34,7 @@ def format_distance(distance: float):
     Formats the distance into a two-digit string
 
     :param distance: float representing the distance in centimeters
-    :return: str representing the dmistance formatted as a two-digit string
+    :return: str representing the distance formatted as a two-digit string
     """
     return "%02d" % distance
 
@@ -44,15 +44,12 @@ def handle_echo(pin):
 
     :param pin: Pin object representing the echo signal from the sensor
     """
+    global echo_received
+    print("echo received")
+    echo_received = True
     global timeout_echo
     timeout_echo.deinit()
-    timestamp_echo = utime.ticks_us()
-    global distance_cm
-    distance_cm = format_distance((utime.ticks_diff(timestamp_echo, timestamp_trig)) / 58)
-    print(f"diff : {utime.ticks_diff(timestamp_echo, timestamp_trig)} \n \
-    dist : {distance_cm} \n \
-    trig : {timestamp_trig} \n \
-    echo : {timestamp_echo}")
+    
 
 def handle_timeout_echo(time):
     """
@@ -66,13 +63,15 @@ def send_trigger():
     """
     Sends a trigger signal to the HC-SR04 sensor
     """
+    global trigger_sent
     global timestamp_trig
     global timeout_echo
+    trigger_sent = True
     pin_hc_trig.on()
     timestamp_trig = utime.ticks_us()
     utime.sleep_us(10)
     pin_hc_trig.off()
-    timeout_echo.init(period=15, mode=Timer.ONE_SHOT, callback=handle_timeout_echo)
+    timeout_echo.init(period=50, mode=Timer.ONE_SHOT, callback=handle_timeout_echo)
 
 def get_pins(number: int) -> str:
     """
@@ -107,23 +106,39 @@ pin_dot_meter: Pin = Pin(26, mode=Pin.OUT, value=0)
 pin_hc_echo: Pin = Pin(27, mode=Pin.IN)
 pin_hc_echo.irq(trigger=Pin.IRQ_RISING, handler=handle_echo)
 pin_hc_trig: Pin = Pin(28, mode=Pin.OUT, value=0)
-bool_running: bool = True
+continue_running: bool = True
+echo_received: bool = False
+trigger_sent: bool = False
 timeout_echo: Timer = Timer()
 distance_cm: str = '00'
 
-while bool_running:
-    pin_dot_meter.off()
-    send_trigger()
-    print(f"\033cDistance in CM : {distance_cm} cm.")
-    if int(distance_cm) < 30:
-        pin_led_working.off()
-        print("\nAlarm ! \n")
-        pin_led_alarm.toggle()
-        utime.sleep_ms(500)
-        pin_led_alarm.toggle()
-    else:
-        pin_led_working.on()
-    if int(distance_cm) > 100:
-        pin_dot_meter.on()
-    write_distance(distance_cm)
-    utime.sleep(1)
+while continue_running:
+    if echo_received:
+        timestamp_echo = utime.ticks_us()
+        distance_cm = format_distance((utime.ticks_diff(timestamp_echo, timestamp_trig)) / 58)
+        print(f"diff : {utime.ticks_diff(timestamp_echo, timestamp_trig)} \n \
+        dist : {distance_cm} \n \
+        trig : {timestamp_trig} \n \
+        echo : {timestamp_echo}")
+        continue_running = False
+        echo_received = False
+    if not trigger_sent:
+        print("hello")
+        utime.sleep(1)
+        send_trigger()
+        trigger_sent = False
+    # pin_dot_meter.off()
+    # print(f"\033cDistance in CM : {distance_cm} cm.")
+    # if int(distance_cm) < 30:
+    #     pin_led_working.off()
+    #     print("\nAlarm ! \n")
+    #     pin_led_alarm.toggle()
+    #     utime.sleep_ms(500)
+    #     pin_led_alarm.toggle()
+    # else:
+    #     pin_led_working.on()
+    # if int(distance_cm) > 100:
+    #     pin_dot_meter.on()
+    # write_distance(distance_cm)
+    # print()
+    # utime.sleep(1)
