@@ -1,10 +1,11 @@
 import serial
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
+# open a serial connection
+serial_com = serial.Serial("COM4", 115200, timeout=0)
 
-serial_port = serial.Serial(os.getenv("NAME_DEVICE"), 9600)  # Open the serial port
+# blink the led
 while True:
-    data = serial_port.readline().decode()  # Read data from the serial port
-    print(data)  # Print the received data
+    # string = input("string : ")
+    # serial_com.write(f"{string}\n".encode())
+    if distance := serial_com.readline().decode():
+        print(f"{distance}")

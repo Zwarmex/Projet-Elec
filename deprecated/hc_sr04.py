@@ -57,7 +57,7 @@ def measure_distance() -> str:
     while pin_hc_echo.value():
         end = time.ticks_us()
     duration: int = time.ticks_diff(end, start)
-    distance: str = "%02d" % int(duration / 58)
+    distance: str = "%02d" % (duration // 58)
     return distance
 
 

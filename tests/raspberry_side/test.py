@@ -1,18 +1,30 @@
-from machine import Pin
+import sys
+import machine
 import time
+import re
+
+led = machine.Pin("LED", machine.Pin.OUT)
+led(1)
+time.sleep(0.5)
+led(0)
+
+def led_on():
+    led(1)
+
+def led_off():
+    led(0)
 
 
-pin_trig = Pin(17, Pin.OUT, value=0)
-pin_echo = Pin(16, Pin.IN, Pin.PULL_DOWN)
 while True:
-    pin_trig.on()
-    time.sleep_us(2)
-    pin_trig.off()
-    while pin_echo.value()==0:
-        pulse_start = time.ticks_us()
-    while pin_echo.value()==1:
-        pulse_end = time.ticks_us()
-    pulse_duration = pulse_end - pulse_start
-    distance = round(pulse_duration * 17165 / 1000000, 0)
-    print ('Distance:',"{:.0f}".format(distance),'cm')
-    time.sleep(1)
+    # read a command from the host
+    reading = sys.stdin.readline().strip()
+
+    # perform the requested action
+    line = reading.lower()
+    if re.search("led=", line):
+        led_value = re.sub("[^0-9]", "", line)
+        if led_value:
+            led_on()
+        else:
+            led_off()
+        sys.stdout.write(f"{bool(led_value)}\n")

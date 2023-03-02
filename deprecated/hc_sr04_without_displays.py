@@ -6,14 +6,14 @@ def handle_echo(pin):
     global pulse_start, echo_timeout, echo_late, echo_received, pulse_duration
     if pin.value() == 1:
         pulse_start = time.ticks_us()
+    elif echo_late:
+        echo_late = False
+
     else:
-        if not echo_late:
-            echo_timeout.deinit()
-            pulse_end = time.ticks_us()
-            pulse_duration = pulse_end - pulse_start
-            echo_received = True
-        else:
-            echo_late = False
+        echo_timeout.deinit()
+        pulse_end = time.ticks_us()
+        pulse_duration = pulse_end - pulse_start
+        echo_received = True
 
 def handle_timeout_echo(timer):
     global echo_late
