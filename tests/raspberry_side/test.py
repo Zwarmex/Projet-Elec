@@ -18,7 +18,6 @@ def led_off():
 while True:
     # read a command from the host
     reading = sys.stdin.readline().strip()
-
     # perform the requested action
     line = reading.lower()
     if re.search("led=", line):

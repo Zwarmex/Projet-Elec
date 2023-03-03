@@ -36,9 +36,7 @@ def handle_echo(pin: Pin) -> None:
         echo_received = True
 
 def write_distance(distance: str) -> None:
-    global number_of_trigger
-    print(f'n°{number_of_trigger} | Distance: {distance} cm')
-    number_of_trigger += 1
+    print(distance)
     
     # def write_distance(distance: str, displays: list) -> None:
     #     global number_of_trigger
@@ -59,8 +57,8 @@ def write_distance(distance: str) -> None:
 def calculate_distance(pulse_start: int, pulse_end: int) -> str:
     return "%02d" % (round(time.ticks_diff(pulse_end, pulse_start) / 58, 0))
 
-def check_alarm_and_meters(distance: str) -> bool:
-    return int(distance) < 30, int(distance) >= 100
+def check_alarm_and_meters(distance: str, alarm: int) -> bool:
+    return int(distance) < alarm, int(distance) >= 100
 
 def send_trigger(pin: Pin) -> None:
     pin.on()
@@ -71,8 +69,8 @@ def send_trigger(pin: Pin) -> None:
 led=Pin("LED", Pin.OUT, value=0)    #
 led(1)                              #
 time.sleep(0.5)                     #
+led(0)                              #
 #####################################
-led(0)
 pin_led_red: Pin = Pin(0, Pin.OUT, value=0)
 pin_led_green: Pin = Pin(1, Pin.OUT, value=0)
     # displays: list= [[],[]] # left, right
@@ -86,10 +84,10 @@ pin_echo.irq(handle_echo, Pin.IRQ_FALLING | Pin.IRQ_RISING)
 pin_trigger: Pin = Pin(28, Pin.OUT, value=0)
 pulse_start: int = 0
 pulse_end: int = 0
-number_of_trigger: int = 0
 next_send_trigger: int = 0
 next_toggle_led_red: int = 0
 next_timeout_echo: int = 0
+alarm_limit: int = 30
 echo_received: bool = False
 timeout_echo: bool = False
 alarmed: bool = False
@@ -100,12 +98,19 @@ try:
     while True:
         current_timestamp: int = time.ticks_us()
         
+        # # read a command from the host
+        # reading = sys.stdin.readline().strip()
+        # # perform the requested action
+        # line = reading.lower()
+        # if "led=" in line:
+        #     led_value = line.split("=")[1]
+            
         # Time to send another trigger
         if current_timestamp >= next_send_trigger :
             # print("sending")
             send_trigger(pin_trigger)
             next_send_trigger: int = time.ticks_us() + 1000000
-            next_timeout_echo: int = time.ticks_us() + 15000 # time max travelled by sound for 400cm
+            next_timeout_echo: int = time.ticks_us() + 60000 # time max travelled by sound for 800cm (400*2)
             timeout_echo: bool = False
         
         # When the echo is in timeout
@@ -117,9 +122,7 @@ try:
             if not timeout_echo:
                 distance_cm: float = calculate_distance(pulse_start, pulse_end)
                 write_distance(distance_cm)
-                alarmed, meters: bool = check_alarm_and_meters(distance_cm)
-                # Write to the pc by the usb
-                # sys.stdout.write(f"{distance_cm}\n")
+                alarmed, meters = check_alarm_and_meters(distance_cm, alarm_limit)
             else:
                 print('Timeout')
                 timeout_echo: bool = False
@@ -136,8 +139,7 @@ try:
                 # if meters:
                     # pin_display_dot.on()
             pin_led_red.off()
-            pin_led_green.on()
-        
+            pin_led_green.on()        
         
 except KeyboardInterrupt:
     pin_led_red.off()
