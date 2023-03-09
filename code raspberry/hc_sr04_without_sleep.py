@@ -35,24 +35,19 @@ def handle_echo(pin: Pin) -> None:
         pulse_end = time.ticks_us()
         echo_received = True
 
-def write_distance(distance: str) -> None:
-    print(distance)
+def write_distance(distance: str, displays_array: list) -> None:
+    state_display_left: str = get_pins(int(distance[0]))
+    state_display_right: str = get_pins(int(distance[1]))
+    for index in range(len(displays_array[0])):
+        displays_array[0][index].value(int(state_display_left[index]))
+    for index in range(len(displays_array[1])):
+        displays_array[1][index].value(int(state_display_right[index]))
+    print(f'{distance}')
     
-    # def write_distance(distance: str, displays: list) -> None:
-    #     global number_of_trigger
-    #     state_display_left: str = get_pins(int(distance[0]))
-    #     state_display_right: str = get_pins(int(distance[1]))
-    #     for index in range(len(displays[0])):
-    #         displays[0][index].value(int(state_display_left[index]))
-    #     for index in range(len(displays[1])):
-    #         displays[1][index].value(int(state_display_right[index]))
-    #     print(f'n°{number_of_trigger} | Distance: {distance} cm')
-    #     number_of_trigger += 1
-        
-    # def get_pins(number: int) -> str:
-    #     pins_state: list = ["1111110", "0110000", "1101101", "1111001", "0110011",
-    #                         "1011011", "1011111", "1110000", "1111111", "1111011"]
-    #     return pins_state[number]
+def get_pins(number: int) -> str:
+    pins_state: list = ["1111101", "0110000", "1101110", "1111010", "0110011",
+                        "1011011", "1011111", "1110000", "1111111", "1111011"]
+    return pins_state[number]
 
 def calculate_distance(pulse_start: int, pulse_end: int) -> str:
     return "%02d" % (round(time.ticks_diff(pulse_end, pulse_start) / 58, 0))
@@ -73,12 +68,12 @@ led(0)                              #
 #####################################
 pin_led_red: Pin = Pin(0, Pin.OUT, value=0)
 pin_led_green: Pin = Pin(1, Pin.OUT, value=0)
-    # displays: list= [[],[]] # left, right
-    # for i in range(7):
-    #     displays[0].append(Pin(9+i, Pin.OUT, value=0))
-    # for i in range(7):
-    #     displays[1].append(Pin(16+i, Pin.OUT, value=0))
-    # pin_display_dot: Pin = Pin(26, Pin.OUT, value=0)
+displays: list= [[],[]] # left, right
+for i in range(7):
+    displays[0].append(Pin(9+i, Pin.OUT, value=0))
+for i in range(7):
+    displays[1].append(Pin(16+i, Pin.OUT, value=0))
+pin_display_dot: Pin = Pin(26, Pin.OUT, value=0)
 pin_echo: Pin = Pin(27, Pin.IN, Pin.PULL_DOWN)
 pin_echo.irq(handle_echo, Pin.IRQ_FALLING | Pin.IRQ_RISING)
 pin_trigger: Pin = Pin(28, Pin.OUT, value=0)
@@ -121,7 +116,7 @@ try:
         if echo_received:
             if not timeout_echo:
                 distance_cm: float = calculate_distance(pulse_start, pulse_end)
-                write_distance(distance_cm)
+                write_distance(distance_cm, displays)
                 alarmed, meters = check_alarm_and_meters(distance_cm, alarm_limit)
             else:
                 print('Timeout')
@@ -131,23 +126,26 @@ try:
         
         # When the object is nearer than the limit
         if alarmed:
+            pin_display_dot.off()
             pin_led_green.off()
             if current_timestamp >= next_toggle_led_red:
                 next_toggle_led_red: int = time.ticks_us() + 500000
                 pin_led_red.toggle()
         else:
-                # if meters:
-                    # pin_display_dot.on()
+            if meters:
+                pin_display_dot.on()
+            else:
+                pin_display_dot.off()
             pin_led_red.off()
             pin_led_green.on()        
         
 except KeyboardInterrupt:
     pin_led_red.off()
     pin_led_green.off()
-        # for display in displays:
-        #     for pin in display:
-        #         pin.off()
-        # pin_display_dot.off()
+    for display in displays:
+        for pin in display:
+            pin.off()
+    pin_display_dot.off()
     pin_echo.off()
     pin_trigger.off()
     print("EOP")
