@@ -15,7 +15,7 @@ Pin 19 D right display
 Pin 20 E right display
 Pin 21 F right display
 Pin 22 G right display
-Pin 26 dot
+Pin 4 dot
 Pin 27 Echo
 Pin 28 Trig
 """
