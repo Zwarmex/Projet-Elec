@@ -34,9 +34,6 @@ try:
     for i in range (35):
         write_distance(calculate_distance(i), displays)
         time.sleep(0.5)
-    for display in displays:
-        for pin in display:
-            pin.off()
 except KeyboardInterrupt:
     for display in displays:
         for pin in display:
