@@ -22,7 +22,7 @@ class Application:
         self.window.grid_rowconfigure(0, weight=1)
         self.window.grid_columnconfigure(0, weight=1)
         self.intVar_actual_alarm_value: IntVar = IntVar(value=DEFAULT_ALARM)
-        self.intVar_new_alarm_value: IntVar = IntVar()
+        self.intVar_new_alarm_value: IntVar = IntVar(value=DEFAULT_ALARM)
         self.intVar_distance_value: IntVar = IntVar()
         self.stringVar_error_serial_port: StringVar = StringVar(value='')
         # open a serial connection
